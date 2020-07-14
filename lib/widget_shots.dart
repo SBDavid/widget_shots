@@ -6,10 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:ui' as ui;
+import 'dart:io';
 
-class ScreenshotController {
+class WidgetShotsController {
   GlobalKey _containerKey;
-  ScreenshotController() {
+  WidgetShotsController() {
     _containerKey = GlobalKey();
   }
 
@@ -22,11 +23,26 @@ class ScreenshotController {
     ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData.buffer.asUint8List();
   }
+
+  Future<File> captureFile({
+    String path,
+    double pixelRatio: 1,
+  }) async {
+    assert(path != null);
+
+    Uint8List png = await capture(pixelRatio: pixelRatio);
+    String fileName = DateTime.now().toIso8601String();
+    path = '$path/$fileName.png';
+
+    File imgFile = new File(path);
+    await imgFile.writeAsBytes(png).then((onValue) {});
+    return imgFile;
+  }
 }
 
 class WidgetShots<T> extends StatefulWidget {
   final Widget child;
-  final ScreenshotController controller;
+  final WidgetShotsController controller;
   const WidgetShots({Key key, this.child, this.controller,})
       : super(key: key);
   @override
@@ -36,7 +52,7 @@ class WidgetShots<T> extends StatefulWidget {
 }
 
 class _State extends State<WidgetShots> {
-  ScreenshotController _controller;
+  WidgetShotsController _controller;
   GlobalKey _globalKey;
 
   @override
@@ -46,7 +62,7 @@ class _State extends State<WidgetShots> {
     _globalKey = GlobalKey(debugLabel: "WidgetShots");
 
     if (widget.controller == null) {
-      _controller = ScreenshotController();
+      _controller = WidgetShotsController();
     } else {
       _controller = widget.controller;
     }

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:ui' as ui;
+import 'package:image/image.dart';
 import 'dart:io';
 
 class WidgetShotsController {
@@ -21,7 +22,9 @@ class WidgetShotsController {
     this._containerKey.currentContext.findRenderObject();
     ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
     ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    return byteData.buffer.asUint8List();
+    var imageInt = decodeImage(Int8List.sublistView(byteData));
+    List<int> jpg = encodeJpg(imageInt);
+    return Uint8List.fromList(jpg);
   }
 
   Future<File> captureFile({
@@ -32,7 +35,7 @@ class WidgetShotsController {
 
     Uint8List png = await capture(pixelRatio: pixelRatio);
     String fileName = DateTime.now().toIso8601String();
-    path = '$path/$fileName.png';
+    path = '$path/$fileName.jpg';
 
     File imgFile = new File(path);
     await imgFile.writeAsBytes(png).then((onValue) {});

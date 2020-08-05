@@ -1,7 +1,9 @@
 library widget_shots;
 
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -15,6 +17,11 @@ class WidgetShotsController {
     _containerKey = GlobalKey();
   }
 
+  static Uint8List png2jpg(ByteData png) {
+    var imageInt = decodeImage(png.buffer.asUint8List());
+    return Uint8List.fromList(encodeJpg(imageInt));
+  }
+
   Future<Uint8List> capture({
     double pixelRatio: 1,
   }) async {
@@ -22,9 +29,8 @@ class WidgetShotsController {
     this._containerKey.currentContext.findRenderObject();
     ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
     ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    var imageInt = decodeImage(Int8List.sublistView(byteData));
-    List<int> jpg = encodeJpg(imageInt);
-    return Uint8List.fromList(jpg);
+
+    return compute<ByteData, Uint8List>(WidgetShotsController.png2jpg, byteData);
   }
 
   Future<File> captureFile({

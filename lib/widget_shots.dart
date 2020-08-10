@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'dart:ui' as ui;
 import 'package:image/image.dart';
 import 'dart:io';
+import 'dart:isolate';
 
 class WidgetShotsController {
   GlobalKey _containerKey;
@@ -20,6 +21,11 @@ class WidgetShotsController {
   static Uint8List png2jpg(ByteData png) {
     var imageInt = decodeImage(png.buffer.asUint8List());
     return Uint8List.fromList(encodeJpg(imageInt));
+  }
+
+  static TransferableTypedData png2jpg2(TransferableTypedData png) {
+    var imageInt = decodeImage(png.materialize().asUint8List());
+    return TransferableTypedData.fromList([Uint8List.fromList(encodeJpg(imageInt))]);
   }
 
   Future<Uint8List> capture({
@@ -33,13 +39,26 @@ class WidgetShotsController {
     return compute<ByteData, Uint8List>(WidgetShotsController.png2jpg, byteData);
   }
 
+  Future<Uint8List> capture2({
+    double pixelRatio: 1,
+  }) async {
+    RenderRepaintBoundary boundary =
+    this._containerKey.currentContext.findRenderObject();
+    ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+    ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+    TransferableTypedData transferableTypedData = TransferableTypedData.fromList([byteData]);
+    TransferableTypedData res = await compute<TransferableTypedData, TransferableTypedData>(WidgetShotsController.png2jpg2, transferableTypedData);
+    return res.materialize().asUint8List();
+  }
+
   Future<File> captureFile({
     String path,
     double pixelRatio: 1,
   }) async {
     assert(path != null);
 
-    Uint8List png = await capture(pixelRatio: pixelRatio);
+    Uint8List png = await capture2(pixelRatio: pixelRatio);
     String fileName = DateTime.now().toIso8601String();
     path = '$path/$fileName.jpg';
 

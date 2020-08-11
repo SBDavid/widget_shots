@@ -1,6 +1,6 @@
 name: widget_shots
 description: A flutter Widget capture widget display using a controller.
-version: 0.0.7
+version: 1.0.0
 author: DavidTang <billl89g@gmail.com>
 homepage: https://github.com/SBDavid/flutter_page_tracker
 

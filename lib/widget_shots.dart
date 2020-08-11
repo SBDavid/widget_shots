@@ -23,7 +23,7 @@ class WidgetShotsController {
     return Uint8List.fromList(encodeJpg(imageInt));
   }
 
-  static TransferableTypedData png2jpg2(TransferableTypedData png) {
+  static TransferableTypedData png2jpgLargePixelRatio(TransferableTypedData png) {
     var imageInt = decodeImage(png.materialize().asUint8List());
     return TransferableTypedData.fromList([Uint8List.fromList(encodeJpg(imageInt))]);
   }
@@ -36,20 +36,13 @@ class WidgetShotsController {
     ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
     ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
-    return compute<ByteData, Uint8List>(WidgetShotsController.png2jpg, byteData);
-  }
-
-  Future<Uint8List> capture2({
-    double pixelRatio: 1,
-  }) async {
-    RenderRepaintBoundary boundary =
-    this._containerKey.currentContext.findRenderObject();
-    ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
-    ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-
-    TransferableTypedData transferableTypedData = TransferableTypedData.fromList([byteData]);
-    TransferableTypedData res = await compute<TransferableTypedData, TransferableTypedData>(WidgetShotsController.png2jpg2, transferableTypedData);
-    return res.materialize().asUint8List();
+    if (byteData.lengthInBytes > 100 * 1024 * 1024) {
+      TransferableTypedData transferableTypedData = TransferableTypedData.fromList([byteData]);
+      TransferableTypedData res = await compute<TransferableTypedData, TransferableTypedData>(WidgetShotsController.png2jpgLargePixelRatio, transferableTypedData);
+      return res.materialize().asUint8List();
+    } else {
+      return compute<ByteData, Uint8List>(WidgetShotsController.png2jpg, byteData);
+    }
   }
 
   Future<File> captureFile({
@@ -58,7 +51,7 @@ class WidgetShotsController {
   }) async {
     assert(path != null);
 
-    Uint8List png = await capture2(pixelRatio: pixelRatio);
+    Uint8List png = await capture(pixelRatio: pixelRatio);
     String fileName = DateTime.now().toIso8601String();
     path = '$path/$fileName.jpg';
 
